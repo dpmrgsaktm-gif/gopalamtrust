@@ -28,9 +28,9 @@ import {
 import './App.css';
 
 // SVG-based dynamic UPI QR code generator for maximum UX
-function DynamicUpiQr({ amount = 550, name = "GOPALAM TRUST" }) {
+function DynamicUpiQr({ amount = 550, name = "GOPALAM TRUST", upiId = "gopalamtrust@sbi" }) {
   // Let's create a beautiful decorative QR scan visual using SVGs
-  const upiLink = `upi://pay?pa=gopalamtrust@sbi&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR`;
+  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR`;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8.5px' }}>
       <div className="qr-code">
@@ -145,6 +145,13 @@ function App() {
     return parseFloat(localStorage.getItem('gopalam_general_opening') || '100000.00');
   });
   const [editedMembers, setEditedMembers] = useState({});
+
+  // Trust Bank Details & QR Settings
+  const [trustBankName, setTrustBankName] = useState(() => localStorage.getItem('gopalam_bank_name') || 'State Bank of India');
+  const [trustAccountNo, setTrustAccountNo] = useState(() => localStorage.getItem('gopalam_account_no') || '1234567890');
+  const [trustIfscCode, setTrustIfscCode] = useState(() => localStorage.getItem('gopalam_ifsc_code') || 'SBIN0001234');
+  const [trustBeneficiary, setTrustBeneficiary] = useState(() => localStorage.getItem('gopalam_beneficiary') || 'Gopalam Trust Unit');
+  const [trustUpiId, setTrustUpiId] = useState(() => localStorage.getItem('gopalam_upi_id') || 'gopalamtrust@sbi');
   
   // Action form states
   const [meetingForm, setMeetingForm] = useState({ date: '', conductorId: '', place: '' });
@@ -1135,28 +1142,70 @@ function App() {
 
                 {activeTab === 'settings' && (
                   <div>
-                    {/* General trust opening balance */}
-                    <div className="glass-panel" style={{ marginBottom: '24px' }}>
-                      <h3 style={{ marginBottom: '12px' }}>General Trust Settings</h3>
-                      <div className="form-group" style={{ maxWidth: '300px' }}>
-                        <label>Trust Opening Reserve Balance (Rs.)</label>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <input 
-                            type="number" 
-                            className="form-control"
-                            value={generalOpeningBalance}
-                            onChange={(e) => setGeneralOpeningBalance(parseFloat(e.target.value) || 0)}
-                          />
-                          <button 
-                            className="btn btn-primary"
-                            onClick={() => {
-                              localStorage.setItem('gopalam_general_opening', generalOpeningBalance.toString());
-                              setSuccessMessage('General trust opening reserve updated!');
-                            }}
-                          >
-                            Save
-                          </button>
+                    <div className="flex-layout" style={{ marginBottom: '24px' }}>
+                      {/* General trust opening balance */}
+                      <div className="glass-panel">
+                        <h3 style={{ marginBottom: '12px' }}>General Trust Settings</h3>
+                        <div className="form-group" style={{ maxWidth: '300px' }}>
+                          <label>Trust Opening Reserve Balance (Rs.)</label>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <input 
+                              type="number" 
+                              className="form-control"
+                              value={generalOpeningBalance}
+                              onChange={(e) => setGeneralOpeningBalance(parseFloat(e.target.value) || 0)}
+                            />
+                            <button 
+                              className="btn btn-primary"
+                              onClick={() => {
+                                localStorage.setItem('gopalam_general_opening', generalOpeningBalance.toString());
+                                setSuccessMessage('General trust opening reserve updated!');
+                              }}
+                            >
+                              Save
+                            </button>
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Trust Bank Details & QR Settings */}
+                      <div className="glass-panel">
+                        <h3 style={{ marginBottom: '12px' }}>Trust Bank & QR Settings</h3>
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          localStorage.setItem('gopalam_bank_name', trustBankName);
+                          localStorage.setItem('gopalam_account_no', trustAccountNo);
+                          localStorage.setItem('gopalam_ifsc_code', trustIfscCode);
+                          localStorage.setItem('gopalam_beneficiary', trustBeneficiary);
+                          localStorage.setItem('gopalam_upi_id', trustUpiId);
+                          setSuccessMessage('Trust bank details and UPI QR code settings updated successfully!');
+                        }}>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Bank Name</label>
+                              <input type="text" className="form-control" value={trustBankName} onChange={(e) => setTrustBankName(e.target.value)} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Account Number</label>
+                              <input type="text" className="form-control" value={trustAccountNo} onChange={(e) => setTrustAccountNo(e.target.value)} required />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>IFSC Code</label>
+                              <input type="text" className="form-control" value={trustIfscCode} onChange={(e) => setTrustIfscCode(e.target.value)} required />
+                            </div>
+                            <div className="form-group">
+                              <label>Beneficiary Name</label>
+                              <input type="text" className="form-control" value={trustBeneficiary} onChange={(e) => setTrustBeneficiary(e.target.value)} required />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>UPI ID (For QR Code Scan)</label>
+                            <input type="text" className="form-control" value={trustUpiId} onChange={(e) => setTrustUpiId(e.target.value)} required placeholder="e.g. gopalamtrust@sbi" />
+                          </div>
+                          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Save Trust Details</button>
+                        </form>
                       </div>
                     </div>
 
@@ -1235,6 +1284,25 @@ function App() {
                                       >
                                         Update
                                       </button>
+                                      {m.role !== 'convenor' && (
+                                        <button 
+                                          className="btn btn-danger"
+                                          style={{ padding: '6px 12px', marginLeft: '6px' }}
+                                          onClick={async () => {
+                                            if (confirm(`Delete member ${m.name}? This will remove all their collections and loans.`)) {
+                                              try {
+                                                await dbService.deleteMember(m.id);
+                                                setSuccessMessage(`Member ${m.name} has been deleted.`);
+                                                fetchData();
+                                              } catch (err) {
+                                                setErrorMessage('Error deleting member');
+                                              }
+                                            }
+                                          }}
+                                        >
+                                          Delete
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 );
@@ -1430,24 +1498,28 @@ function App() {
                           </p>
 
                           {/* Dynamic UPI Qr code */}
-                          <DynamicUpiQr amount={myActiveLoan ? (550 + (parseFloat(myActiveLoan.balance_amount) * 0.005)) : 550} />
+                          <DynamicUpiQr 
+                            amount={myActiveLoan ? (550 + (parseFloat(myActiveLoan.balance_amount) * 0.005)) : 550} 
+                            upiId={trustUpiId}
+                            name={trustBeneficiary}
+                          />
 
                           <div className="bank-details-box" style={{ width: '100%' }}>
                             <div className="bank-detail-item">
                               <span className="bank-label">Bank Name</span>
-                              <span className="bank-value">State Bank of India</span>
+                              <span className="bank-value">{trustBankName}</span>
                             </div>
                             <div className="bank-detail-item">
                               <span className="bank-label">Account No</span>
-                              <span className="bank-value">1234567890</span>
+                              <span className="bank-value">{trustAccountNo}</span>
                             </div>
                             <div className="bank-detail-item">
                               <span className="bank-label">IFSC Code</span>
-                              <span className="bank-value">SBIN0001234</span>
+                              <span className="bank-value">{trustIfscCode}</span>
                             </div>
                             <div className="bank-detail-item">
                               <span className="bank-label">Beneficiary</span>
-                              <span className="bank-value">Gopalam Trust Unit</span>
+                              <span className="bank-value">{trustBeneficiary}</span>
                             </div>
                           </div>
                         </div>

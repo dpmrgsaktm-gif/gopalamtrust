@@ -332,5 +332,17 @@ export const dbService = {
     const db = getLocalDb();
     db.expenses = db.expenses.filter(e => e.id !== id);
     saveLocalDb(db);
+  },
+
+  async deleteMember(id) {
+    if (supabase) {
+      await supabase.from('members').delete().eq('id', id);
+    }
+    const db = getLocalDb();
+    db.members = db.members.filter(m => m.id !== id);
+    db.collections = db.collections.filter(c => c.member_id !== id);
+    db.loans = db.loans.filter(l => l.member_id !== id);
+    db.meetings = db.meetings.filter(m => m.conductor_id !== id);
+    saveLocalDb(db);
   }
 };
