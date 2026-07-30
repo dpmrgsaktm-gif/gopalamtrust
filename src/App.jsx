@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   Info,
   Sun,
-  Moon
+  Moon,
+  Trash2
 } from 'lucide-react';
 import './App.css';
 
@@ -765,6 +766,7 @@ function App() {
                               <th>Date</th>
                               <th>Conductor</th>
                               <th>Place</th>
+                              <th>Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -773,6 +775,15 @@ function App() {
                                 <td>{m.meeting_date}</td>
                                 <td>{m.conductor?.name || 'Unknown'}</td>
                                 <td>{m.place}</td>
+                                <td>
+                                  <button className="btn btn-danger" style={{ padding: '4px 8px' }} onClick={async () => {
+                                    if(confirm("Delete this meeting? Linked collections/expenses will also be deleted.")) {
+                                      await dbService.deleteMeeting(m.id);
+                                      setSuccessMessage("Meeting deleted.");
+                                      fetchData();
+                                    }
+                                  }}><Trash2 size={14} /></button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -845,6 +856,7 @@ function App() {
                               <th>Principal</th>
                               <th>Balance</th>
                               <th>Status</th>
+                              <th>Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -857,6 +869,15 @@ function App() {
                                   <span className={`badge ${l.status === 'active' ? 'badge-pending' : 'badge-success'}`}>
                                     {l.status}
                                   </span>
+                                </td>
+                                <td>
+                                  <button className="btn btn-danger" style={{ padding: '4px 8px' }} onClick={async () => {
+                                    if(confirm("Delete this loan record?")) {
+                                      await dbService.deleteLoan(l.id);
+                                      setSuccessMessage("Loan record deleted.");
+                                      fetchData();
+                                    }
+                                  }}><Trash2 size={14} /></button>
                                 </td>
                               </tr>
                             ))}
@@ -997,6 +1018,7 @@ function App() {
                                       <th>Loan Repayment</th>
                                       <th>Interest Paid</th>
                                       <th>Total Contributed</th>
+                                      <th>Action</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -1010,6 +1032,15 @@ function App() {
                                           <td>Rs. {parseFloat(c.loan_repayment).toLocaleString()}</td>
                                           <td>Rs. {parseFloat(c.interest_paid).toLocaleString()}</td>
                                           <td style={{ fontWeight: 'bold' }}>Rs. {totalPaid.toLocaleString()}</td>
+                                          <td>
+                                            <button className="btn btn-danger" style={{ padding: '4px 8px' }} onClick={async () => {
+                                              if (confirm("Delete this collection record? If there was a loan repayment, it will be reversed.")) {
+                                                await dbService.deleteCollection(c.id);
+                                                setSuccessMessage("Collection deleted.");
+                                                fetchData();
+                                              }
+                                            }}><Trash2 size={14} /></button>
+                                          </td>
                                         </tr>
                                       );
                                     })}
@@ -1020,6 +1051,7 @@ function App() {
                                       <td>Rs. {repaymentTotal.toLocaleString()}</td>
                                       <td>Rs. {interestTotal.toLocaleString()}</td>
                                       <td>Rs. {totalInflow.toLocaleString()}</td>
+                                      <td></td>
                                     </tr>
                                   </tbody>
                                 </table>
@@ -1041,6 +1073,7 @@ function App() {
                                         <th>Date</th>
                                         <th>Description</th>
                                         <th>Amount</th>
+                                        <th>Action</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -1049,6 +1082,15 @@ function App() {
                                           <td>{e.expense_date}</td>
                                           <td>{e.description}</td>
                                           <td style={{ color: 'var(--accent-rose)', fontWeight: '500' }}>Rs. {parseFloat(e.amount).toLocaleString()}</td>
+                                          <td>
+                                            <button className="btn btn-danger" style={{ padding: '4px 8px' }} onClick={async () => {
+                                              if(confirm("Delete this expense?")) {
+                                                await dbService.deleteExpense(e.id);
+                                                setSuccessMessage("Expense deleted.");
+                                                fetchData();
+                                              }
+                                            }}><Trash2 size={14} /></button>
+                                          </td>
                                         </tr>
                                       ))}
                                     </tbody>

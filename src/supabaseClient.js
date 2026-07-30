@@ -277,5 +277,60 @@ export const dbService = {
     db.expenses.push(newExpense);
     saveLocalDb(db);
     return newExpense;
+  },
+
+  async deleteMeeting(id) {
+    if (supabase) {
+      await supabase.from('meetings').delete().eq('id', id);
+    }
+    const db = getLocalDb();
+    db.meetings = db.meetings.filter(m => m.id !== id);
+    db.collections = db.collections.filter(c => c.meeting_id !== id);
+    db.expenses = db.expenses.filter(e => e.meeting_id !== id);
+    saveLocalDb(db);
+  },
+
+  async deleteCollection(id) {
+    const db = getLocalDb();
+    const idx = db.collections.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      const coll = db.collections[idx];
+      if (parseFloat(coll.loan_repayment) > 0) {
+        const memberLoans = db.loans.filter(l => l.member_id === coll.member_id);
+        const targetLoan = memberLoans.find(l => l.status === 'active') || memberLoans[memberLoans.length - 1];
+        if (targetLoan) {
+          targetLoan.balance_amount = parseFloat(targetLoan.balance_amount) + parseFloat(coll.loan_repayment);
+          if (targetLoan.status === 'repaid' && targetLoan.balance_amount > 0) {
+            targetLoan.status = 'active';
+          }
+          if (supabase) {
+            await supabase.from('loans').update({ balance_amount: targetLoan.balance_amount, status: targetLoan.status }).eq('id', targetLoan.id);
+          }
+        }
+      }
+      if (supabase) {
+        await supabase.from('collections').delete().eq('id', id);
+      }
+      db.collections.splice(idx, 1);
+      saveLocalDb(db);
+    }
+  },
+
+  async deleteLoan(id) {
+    if (supabase) {
+      await supabase.from('loans').delete().eq('id', id);
+    }
+    const db = getLocalDb();
+    db.loans = db.loans.filter(l => l.id !== id);
+    saveLocalDb(db);
+  },
+
+  async deleteExpense(id) {
+    if (supabase) {
+      await supabase.from('expenses').delete().eq('id', id);
+    }
+    const db = getLocalDb();
+    db.expenses = db.expenses.filter(e => e.id !== id);
+    saveLocalDb(db);
   }
 };
