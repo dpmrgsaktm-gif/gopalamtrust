@@ -150,6 +150,7 @@ function App() {
   const [collectionForm, setCollectionForm] = useState({ meetingId: '', memberId: '', subscription: 500, thrift: 50, repayment: 0, interest: 0 });
   const [loanForm, setLoanForm] = useState({ memberId: '', amount: 10000, date: '' });
   const [expenseForm, setExpenseForm] = useState({ meetingId: '', description: '', amount: 0, date: '' });
+  const [newMemberForm, setNewMemberForm] = useState({ name: '', email: '', phone: '', role: 'member', openingSub: 0, openingThrift: 0 });
   
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -310,6 +311,30 @@ function App() {
       fetchData();
     } catch (err) {
       setErrorMessage(err.message || 'Error recording expense.');
+    }
+  };
+
+  // Create New Member
+  const handleCreateMember = async (e) => {
+    e.preventDefault();
+    if (!newMemberForm.name || !newMemberForm.email) {
+      setErrorMessage('Name and Email are required.');
+      return;
+    }
+    try {
+      await dbService.addMember({
+        name: newMemberForm.name,
+        email: newMemberForm.email,
+        phone: newMemberForm.phone || null,
+        role: newMemberForm.role,
+        opening_subscription_balance: parseFloat(newMemberForm.openingSub) || 0,
+        opening_thrift_balance: parseFloat(newMemberForm.openingThrift) || 0
+      });
+      setSuccessMessage(`New member "${newMemberForm.name}" created successfully!`);
+      setNewMemberForm({ name: '', email: '', phone: '', role: 'member', openingSub: 0, openingThrift: 0 });
+      fetchData();
+    } catch (err) {
+      setErrorMessage('Failed to create new member.');
     }
   };
 
@@ -1093,85 +1118,161 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Member opening balances */}
-                    <div className="glass-panel">
-                      <h3 style={{ marginBottom: '16px' }}>Member Opening Balances Registry</h3>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
-                        Set the initial subscription and thrift balances accumulated by each member prior to using this management software.
-                      </p>
-                      <div className="table-wrapper">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Member Name</th>
-                              <th>Opening Subscription (Rs.)</th>
-                              <th>Opening Thrift (Rs.)</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {members.map(m => {
-                              const tempSub = editedMembers[m.id]?.opening_subscription_balance ?? m.opening_subscription_balance;
-                              const tempThrift = editedMembers[m.id]?.opening_thrift_balance ?? m.opening_thrift_balance;
-                              return (
-                                <tr key={m.id}>
-                                  <td style={{ fontWeight: '500' }}>{m.name} ({m.role})</td>
-                                  <td>
-                                    <input 
-                                      type="number" 
-                                      className="form-control"
-                                      style={{ padding: '6px 12px', maxWidth: '180px' }}
-                                      value={tempSub}
-                                      onChange={(e) => setEditedMembers({
-                                        ...editedMembers,
-                                        [m.id]: {
-                                          ...editedMembers[m.id],
-                                          opening_subscription_balance: parseFloat(e.target.value) || 0,
-                                          opening_thrift_balance: tempThrift
-                                        }
-                                      })}
-                                    />
-                                  </td>
-                                  <td>
-                                    <input 
-                                      type="number" 
-                                      className="form-control"
-                                      style={{ padding: '6px 12px', maxWidth: '180px' }}
-                                      value={tempThrift}
-                                      onChange={(e) => setEditedMembers({
-                                        ...editedMembers,
-                                        [m.id]: {
-                                          opening_subscription_balance: tempSub,
-                                          opening_thrift_balance: parseFloat(e.target.value) || 0
-                                        }
-                                      })}
-                                    />
-                                  </td>
-                                  <td>
-                                    <button 
-                                      className="btn"
-                                      style={{ padding: '6px 12px' }}
-                                      onClick={async () => {
-                                        try {
-                                          await dbService.updateMember(m.id, {
-                                            opening_subscription_balance: parseFloat(tempSub) || 0,
-                                            opening_thrift_balance: parseFloat(tempThrift) || 0
-                                          });
-                                          setSuccessMessage(`Opening balances updated for ${m.name}`);
-                                          fetchData();
-                                        } catch (err) {
-                                          setErrorMessage('Error updating balances');
-                                        }
-                                      }}
-                                    >
-                                      Update
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                    {/* Member registry & balances section */}
+                    <div className="flex-layout">
+                      {/* Member opening balances */}
+                      <div className="glass-panel">
+                        <h3 style={{ marginBottom: '16px' }}>Member Opening Balances Registry</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                          Set the initial subscription and thrift balances accumulated by each member prior to using this management software.
+                        </p>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Member Name</th>
+                                <th>Opening Subscription (Rs.)</th>
+                                <th>Opening Thrift (Rs.)</th>
+                                <th>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {members.map(m => {
+                                const tempSub = editedMembers[m.id]?.opening_subscription_balance ?? m.opening_subscription_balance;
+                                const tempThrift = editedMembers[m.id]?.opening_thrift_balance ?? m.opening_thrift_balance;
+                                return (
+                                  <tr key={m.id}>
+                                    <td style={{ fontWeight: '500' }}>{m.name} ({m.role})</td>
+                                    <td>
+                                      <input 
+                                        type="number" 
+                                        className="form-control"
+                                        style={{ padding: '6px 12px', maxWidth: '180px' }}
+                                        value={tempSub}
+                                        onChange={(e) => setEditedMembers({
+                                          ...editedMembers,
+                                          [m.id]: {
+                                            ...editedMembers[m.id],
+                                            opening_subscription_balance: parseFloat(e.target.value) || 0,
+                                            opening_thrift_balance: tempThrift
+                                          }
+                                        })}
+                                      />
+                                    </td>
+                                    <td>
+                                      <input 
+                                        type="number" 
+                                        className="form-control"
+                                        style={{ padding: '6px 12px', maxWidth: '180px' }}
+                                        value={tempThrift}
+                                        onChange={(e) => setEditedMembers({
+                                          ...editedMembers,
+                                          [m.id]: {
+                                            opening_subscription_balance: tempSub,
+                                            opening_thrift_balance: parseFloat(e.target.value) || 0
+                                          }
+                                        })}
+                                      />
+                                    </td>
+                                    <td>
+                                      <button 
+                                        className="btn"
+                                        style={{ padding: '6px 12px' }}
+                                        onClick={async () => {
+                                          try {
+                                            await dbService.updateMember(m.id, {
+                                              opening_subscription_balance: parseFloat(tempSub) || 0,
+                                              opening_thrift_balance: parseFloat(tempThrift) || 0
+                                            });
+                                            setSuccessMessage(`Opening balances updated for ${m.name}`);
+                                            fetchData();
+                                          } catch (err) {
+                                            setErrorMessage('Error updating balances');
+                                          }
+                                        }}
+                                      >
+                                        Update
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Add new member form */}
+                      <div className="glass-panel">
+                        <h3 style={{ marginBottom: '16px' }}>Add New Family Member</h3>
+                        <form onSubmit={handleCreateMember}>
+                          <div className="form-group">
+                            <label>Full Name</label>
+                            <input 
+                              type="text" 
+                              className="form-control" 
+                              required 
+                              placeholder="e.g. Hari Gopalam"
+                              value={newMemberForm.name}
+                              onChange={(e) => setNewMemberForm({ ...newMemberForm, name: e.target.value })}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Email Address (For Login)</label>
+                            <input 
+                              type="email" 
+                              className="form-control" 
+                              required 
+                              placeholder="e.g. hari@gopalam.org"
+                              value={newMemberForm.email}
+                              onChange={(e) => setNewMemberForm({ ...newMemberForm, email: e.target.value })}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Phone Number</label>
+                            <input 
+                              type="text" 
+                              className="form-control" 
+                              placeholder="e.g. +91 9876543214"
+                              value={newMemberForm.phone}
+                              onChange={(e) => setNewMemberForm({ ...newMemberForm, phone: e.target.value })}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Account Role</label>
+                            <select 
+                              className="form-control"
+                              value={newMemberForm.role}
+                              onChange={(e) => setNewMemberForm({ ...newMemberForm, role: e.target.value })}
+                            >
+                              <option value="member">Trust Member</option>
+                              <option value="convenor">Trust Convenor</option>
+                            </select>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Opening Subs Balance (Rs.)</label>
+                              <input 
+                                type="number" 
+                                className="form-control" 
+                                value={newMemberForm.openingSub}
+                                onChange={(e) => setNewMemberForm({ ...newMemberForm, openingSub: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Opening Thrift Balance (Rs.)</label>
+                              <input 
+                                type="number" 
+                                className="form-control" 
+                                value={newMemberForm.openingThrift}
+                                onChange={(e) => setNewMemberForm({ ...newMemberForm, openingThrift: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                          </div>
+                          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                            <Plus size={16} /> Register Member
+                          </button>
+                        </form>
                       </div>
                     </div>
                   </div>
