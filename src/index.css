@@ -1,0 +1,5 @@
+/* Clean reset. All custom styles reside in App.css */
+body {
+  margin: 0;
+  padding: 0;
+}
