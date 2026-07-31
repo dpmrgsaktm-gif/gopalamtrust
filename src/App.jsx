@@ -603,6 +603,18 @@ function App() {
                           </div>
                         </div>
 
+                        {collectionForm.memberId && (() => {
+                          const activeLoan = loans.find(l => l.member_id === collectionForm.memberId && l.status === 'active');
+                          return (
+                            <div className="bank-details-box" style={{ marginTop: '0', marginBottom: '20px', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.08)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', flexWrap: 'wrap', gap: '8px' }}>
+                                <span>Outstanding Loan Balance: <strong style={{ color: 'var(--accent-indigo)' }}>Rs. {activeLoan ? parseFloat(activeLoan.balance_amount).toLocaleString() : '0.00'}</strong></span>
+                                <span>Interest for Current Month (0.5%): <strong style={{ color: 'var(--accent-gold)' }}>Rs. {activeLoan ? (activeLoan.balance_amount * 0.005).toFixed(2) : '0.00'}</strong></span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         <div className="form-row">
                           <div className="form-group">
                             <label>Monthly Subscription (Rs.)</label>
